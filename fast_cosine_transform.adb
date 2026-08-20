@@ -2,15 +2,25 @@
 -- Implementation of the FCT and its variants.
 
 with Ada.Numerics;
+with Ada.Numerics.Generic_Elementary_Functions;
 with Ada.Numerics.Generic_Complex_Types;
 with Ada.Numerics.Generic_Complex_Elementary_Functions;
 
 package body Fast_Cosine_Transform is
 
+   -- Instantiate Math for our custom Real type to resolve "Cos"
+   package Real_Math is new Ada.Numerics.Generic_Elementary_Functions (Real);
+   use Real_Math;
+
+   -- Instantiate Complex Types and Math
    package Real_Complex is new Ada.Numerics.Generic_Complex_Types (Real);
-   package Real_Complex_Math is new Ada.Numerics.Generic_Complex_Elementary_Functions (Real_Complex);
    use Real_Complex;
+
+   package Real_Complex_Math is new Ada.Numerics.Generic_Complex_Elementary_Functions (Real_Complex);
    use Real_Complex_Math;
+
+   -- Define the missing Complex_Array type
+   type Complex_Array is array (Integer range <>) of Complex;
 
    Pi : constant Real := Ada.Numerics.Pi;
 
@@ -19,8 +29,16 @@ package body Fast_Cosine_Transform is
    -----------------------
 
    function Is_Power_Of_Two (N : Natural) return Boolean is
+      Temp : Natural := N;
    begin
-      return N > 0 and then (N and (N - 1)) = 0;
+      if Temp = 0 then
+         return False;
+      end if;
+      -- Modulo division replaces the bitwise 'and' to stay strictly within standard Integer/Natural math
+      while Temp mod 2 = 0 loop
+         Temp := Temp / 2;
+      end loop;
+      return Temp = 1;
    end Is_Power_Of_Two;
 
    function Bit_Reverse (V : Natural; Bits : Natural) return Natural is
